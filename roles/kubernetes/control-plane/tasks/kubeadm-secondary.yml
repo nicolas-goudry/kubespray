@@ -63,6 +63,21 @@
     - kubeadm_already_run is not defined or not kubeadm_already_run.stat.exists
     - not kube_external_ca_mode
 
+- name: Get kubeconfig for join discovery process
+  command: "{{ bin_dir }}/kubeadm kubeconfig user --client-name kubeadm-join-discovery"
+  run_once: true
+  delegate_to: "{{ groups['kube_control_plane']|first }}"
+  register: kubeconfig_join_discovery
+  when: not kube_api_anonymous_auth
+
+- name: Copy discovery kubeconfig
+  copy:
+    dest: "{{ kube_config_dir }}/discovery-kubeconfig.yaml"
+    content: "{{ kubeconfig_join_discovery.stdout }}"
+    owner: "root"
+    mode: 0644
+  when: not kube_api_anonymous_auth
+
 - name: Joining control plane node to the cluster.
   command: >-
     {{ bin_dir }}/kubeadm join

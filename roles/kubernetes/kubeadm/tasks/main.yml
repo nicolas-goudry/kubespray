@@ -57,6 +57,21 @@
   set_fact:
     kubeadmConfig_api_version: v1beta3
 
+- name: Get kubeconfig for file discovery
+  command: "{{ bin_dir }}/kubectl -n kube-public get cm cluster-info -o jsonpath='{.data.kubeconfig}'"
+  run_once: true
+  delegate_to: "{{ groups['kube_control_plane']|first }}"
+  register: kubeconfig_file_discovery
+  when: not kube_api_anonymous_auth
+
+- name: Copy discovery kubeconfig
+  copy:
+    dest: "{{ kube_config_dir }}/discovery-kubeconfig.yaml"
+    content: "{{ kubeconfig_file_discovery.stdout }}"
+    owner: "root"
+    mode: 0644
+  when: not kube_api_anonymous_auth
+
 - name: Create kubeadm client config
   template:
     src: "kubeadm-client.conf.{{ kubeadmConfig_api_version }}.j2"

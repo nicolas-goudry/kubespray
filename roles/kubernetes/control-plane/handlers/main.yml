@@ -105,11 +105,9 @@
     - Master | Restart kube-controller-manager
 
 - name: Master | wait for the apiserver to be running
-  uri:
-    url: "{{ kube_apiserver_endpoint }}/healthz"
-    validate_certs: no
+  command: "{{ bin_dir }}/kubectl get --raw /healthz"
   register: result
-  until: result.status == 200
+  until: result.stdout == "ok"
   retries: 60
   delay: 1
   listen:
